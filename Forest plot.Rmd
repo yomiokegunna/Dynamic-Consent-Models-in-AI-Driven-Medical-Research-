@@ -1,0 +1,112 @@
+---
+title: "Quantitative Analysis"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+date: "2025-04-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 12, fig.height = 7, warning = F, error=F, message=F)
+```
+
+
+# Forest plot comparing consent models
+
+
+```{r}
+library(meta)
+library(metafor)
+
+# Study data
+study <- c(
+  "Ah Ra Lee et al. (2024)",
+  "Antje Fischer-Rosinsky et al. (2025)",
+  "Hans et al. (2024)",
+  "Ewing et al. (2015)",
+  "Thiel et al. (2014)",
+  "Xiong et al. (2024)"
+)
+
+# Events = number of people who consented
+events <- c(
+  30,     # Ah Ra Lee: 100% of 30
+  313,    # Antje: 313 consented
+  68,     # Hans: 68 consented
+  1161,   # Ewing Broad
+  137,    # Thiel: 137 completed consent process
+  59      # Xiong: 59 agreed to receive platform
+)
+
+# Total participants
+n <- c(
+  30,
+  1138,
+  151,
+  1528,
+  187,
+  99
+)
+
+# Create meta-analysis object
+meta_obj <- metaprop(
+  event = events,
+  n = n,
+  studlab = study,
+  sm = "PLOGIT",       # Logit transformation for proportions
+  method = "Inverse",  # Inverse variance method
+  comb.fixed = FALSE,
+  comb.random = TRUE,
+  hakn = TRUE,         # Hartung-Knapp adjustment
+  prediction = TRUE,
+  title = "Consent Rates by Study"
+)
+
+# Forest plot
+forest(
+  meta_obj,
+  sortvar = events / n,
+  xlab = "Consent Rate",
+  leftcols = c("studlab", "event", "n"),
+  leftlabs = c("Study", "Events", "Total"),
+  print.tau2 = TRUE,
+  print.I2 = TRUE,
+  colgap.studlab = "2mm",
+  col.square = "darkblue",
+  col.diamond = "darkred",
+  col.diamond.lines = "black",
+  backtransf = TRUE
+)
+
+```
+
+### Interpretation of the Forest Plot
+
+The forest plot presents the pooled consent rates across six studies investigating either dynamic or broad consent models. Each study is represented by a square indicating the point estimate of the consent rate, with the horizontal line denoting the 95% confidence interval (CI). Notably, Ah Ra Lee et al. (2024) reported a perfect consent rate of 1.00, which skews high relative to other studies. In contrast, Antje Fischer-Rosinsky et al. (2025) showed the lowest consent rate at 0.28. The random-effects meta-analysis yielded a pooled consent rate of 0.63 (95% CI: 0.29–0.88), with a prediction interval of 0.08–0.97, suggesting wide variability in expected future results. The heterogeneity is considerable (I² = 99.2%, p < 0.0001), indicating substantial differences among study populations, methodologies, or consent model implementations. The weighting of studies is roughly equal (~18%), except for Ah Ra Lee et al., whose smaller sample size reduced its weight (6.9%). These findings suggest that while dynamic consent models often yield higher consent rates, their effectiveness is highly context-dependent. Therefore, tailoring the model to participant demographics, technology familiarity, and healthcare setting may be critical for optimizing engagement and ethical research participation.
+
+# Funnel Plot (Publication Bias)
+
+```{r, fig.height=5}
+
+# Basic Funnel Plot
+funnel(
+  meta_obj,
+  xlab = "Effect size (logit-transformed proportion)",
+  ylab = "Standard Error",
+  col = "blue",
+  pch = 20,
+  studlab = TRUE,       # Optionally show study labels
+  cex.studlab = 0.9
+)
+
+```
+
+
+### Interpretation of the Funnel Plot
+The funnel plot is used to assess potential publication bias in the included studies evaluating consent rates. In an unbiased scenario, studies with smaller standard errors (i.e., larger sample sizes) cluster near the average effect size at the top, and smaller studies with more variance should scatter symmetrically around the mean at the bottom. However, this plot reveals asymmetry, with most studies leaning toward the left and only one extreme outlier (Ah Ra Lee et al., 2024) on the right. This study, reporting a 100% consent rate, exhibits a high effect size and standard error, making it an outlier that potentially inflates the pooled estimate. The left-skewed distribution may suggest the absence of smaller studies with low consent rates, implying possible publication bias where studies with less favorable or non-significant outcomes are underreported. Moreover, the concentration of studies on one side of the plot could also reflect true heterogeneity rather than selective publication alone. Overall, while the presence of publication bias cannot be conclusively established without further statistical tests (e.g., Egger’s test), the funnel plot highlights the importance of including and publishing studies across the full spectrum of consent outcomes to achieve balanced evidence synthesis.
+
+
+
+
